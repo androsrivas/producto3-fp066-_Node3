@@ -1,4 +1,4 @@
-// stc/index.js
+// src/index.js
 // Punto de entrada del servidor
 import express from "express";
 import cors from "cors";
