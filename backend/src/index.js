@@ -7,6 +7,8 @@ import { readFileSync } from "node:fs";
 import { ApolloServer } from "@apollo/server";
 import { expressMiddleware } from "@as-integrations/express5";
 import { crearContexto } from "./graphql/contexto.js";
+import { cargarDatosDemo } from "./data/demo.js";
+import { resolvers } from "./graphql/resolvers/index.js";
 
 const app = express();
 app.use(cors());
@@ -20,7 +22,8 @@ app.get("/healthy", (req, res) => {
 // Esquema GraphQL (ruta relativa a este fichero, no al directorio desde donde se lanza node)
 const typeDefs = readFileSync(new URL("./graphql/typeDefs.graphql", import.meta.url), "utf8");
 
-const servidorApollo = new ApolloServer({ typeDefs });
+await cargarDatosDemo();
+const servidorApollo = new ApolloServer({ typeDefs, resolvers });
 await servidorApollo.start();
 
 app.use("/graphql", expressMiddleware(servidorApollo, { context: crearContexto }));
