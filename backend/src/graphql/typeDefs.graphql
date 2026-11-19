@@ -1,0 +1,74 @@
+# Esquema GraphQL de Node3 (Producto 3)
+
+"Tipo de intercambio (en el P2: 'Ofrezco idioma' / 'Busco idioma')"
+enum TipoIntercambio {
+    OFREZCO_IDIOMA
+    BUSCO_IDIOMA
+}
+
+"Usuario administrador. Nunca expone la contraseña"
+type Usuario {
+    id: ID!
+    nombre: String!
+    email: String!
+}
+
+type Intercambio {
+    id: ID!
+    titulo: String!
+    email: String!
+    fecha: String!
+    descripcion: String!
+    tipo: TipoIntercambio!
+    seleccionado: Boolean!
+    "Usuario que lo ha publicado (se resuelve a partir de email)"
+    autor: Usuario
+}
+
+"Respuesta del login"
+type AuthPayload {
+    token: String!
+    usuario: Usuario!
+}
+
+input UsuarioInput {
+    nombre: String!
+    email: String!
+    password: String!
+}
+
+input IntercambioInput {
+    titulo: String!
+    email: String!
+    fecha: String!
+    descripcion: String!
+    tipo: TipoIntercambio!
+}
+
+input FiltroIntercambio {
+    tipo: TipoIntercambio
+    email: String
+}
+
+type Query {
+    "Usuario autenticado (a partir del JWT)"
+    yo: Usuario
+    usuarios: [Usuario!]!
+    intercambios(filtro: FiltroIntercambio): [Intercambio!]!
+    "Intercambios seleccionados en el Dashboard"
+    seleccionados: [Intercambio!]!
+}
+
+type Mutation {
+    "Pública: devuelve el token JWT"
+    login(email: String!, password: String!): AuthPayload!
+    logout: Boolean!
+
+    altaUsuario(input: UsuarioInput!): Usuario!
+    borrarUsuario(email: String!): Boolean!
+
+    altaIntercambio(input: IntercambioInput!): Intercambio!
+    borrarIntercambio(id: ID!): Boolean!
+    seleccionarIntercambio(id: ID!): Intercambio!
+    deseleccionarIntercambio(id: ID!): Intercambio!
+}
