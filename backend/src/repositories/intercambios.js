@@ -1,4 +1,4 @@
-// src/respositories/intercambios.js
+// src/repositories/intercambios.js
 // Repositorio de intercambios y de la selección del Dashboard (versión EN MEMORIA)
 import { randomUUID } from "node:crypto";
 
@@ -88,8 +88,8 @@ export async function deseleccionar (id) {
  * Devuelve los intercambios seleccionados.
  * @returns {Promise<Array<object>>}
  */
-export async function listarSeleccionados(filtro = {}) {
+export async function listarSeleccionados() {
     return [...intercambios.values()]
-        .filter((i) => !i.seleccionado)
+        .filter((i) => i.seleccionado)
         .map((i) => ({ ...i }));
 }
