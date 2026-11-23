@@ -9,6 +9,7 @@ import { expressMiddleware } from "@as-integrations/express5";
 import { crearContexto } from "./graphql/contexto.js";
 import { cargarDatosDemo } from "./data/demo.js";
 import { conectar, cerrar } from "./db/conexion.js";
+import { inicializar } from "./db/inicializar.js";
 import { resolvers } from "./graphql/resolvers/index.js";
 
 const app = express();
@@ -25,6 +26,8 @@ const typeDefs = readFileSync(new URL("./graphql/typeDefs.graphql", import.meta.
 
 await conectar();
 console.log("Conectado a MongoDB");
+await inicializar();
+console.log("Colecciones e índices listos");
 
 await cargarDatosDemo();
 const servidorApollo = new ApolloServer({ typeDefs, resolvers });
