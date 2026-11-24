@@ -27,6 +27,21 @@ async function validarIntercambio({ titulo, email, fecha, descripcion }) {
     }
 }
 
+/**
+ * Limpia los datos antes de guardarlos: quita espacios laterales y pasa el email a minúsculas,
+ * igual que hace el repositorio de usuarios, para que los filtros y el borrado en cascada lo encuentren.
+ * @param {{ titulo:string, email:string, fecha:string, descripcion:string, tipo:string }} datos
+ * @returns {{ titulo:string, email:string, fecha:string, descripcion:string, tipo:string }}
+ */
+function normalizarIntercambio(datos) {
+    return {
+        ...datos,
+        titulo: datos.titulo.trim(),
+        email: datos.email.trim().toLowerCase(),
+        descripcion: datos.descripcion.trim(),
+    };
+}
+
 export const resolversIntercambios = {
     Query: {
         // filtro es null si no se envía, y el repositorio solo asume un objeto vacío con undefined
@@ -45,7 +60,7 @@ export const resolversIntercambios = {
         altaIntercambio: async (_, { input }, contexto) => {
             requerirAuth(contexto);
             await validarIntercambio(input);
-            return intercambiosRepo.crear(input);
+            return intercambiosRepo.crear(normalizarIntercambio(input));
         },
 
         borrarIntercambio: async (_, { id }, contexto) => {
