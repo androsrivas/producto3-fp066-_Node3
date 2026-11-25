@@ -8,15 +8,25 @@ import { esEmail, longitudEntre } from "../../utils/validacion.js";
 
 const ERROR_LOGIN = "Email o contraseña incorrectos";
 
+// Mismas reglas que el Producto 2 (frontend/js/int_4_usuarios.js)
+// Letras (con tildes), espacios, punto, apóstrofo y guion. Debe empezar por letra.
+const NOMBRE_RE = /^\p{L}[\p{L} .'-]*$/u;
+const PASSWORD_MIN = 4;
+const PASSWORD_MAX = 30;
+
 /**
  * Valida los datos de alta de un usuario.
  * @param {{ nombre:string, email:string, password:string }} input
  * @throws {import("graphql").GraphQLError} BAD_USER_INPUT indicando el campo que falla.
  */
 function validarAlta({ nombre, email, password }) {
-    if (!longitudEntre(nombre, 2, 50)) throw errorValidacion("El nombre debe tener entre 2 y 50 caracteres.", "nombre");
+    if (!longitudEntre(nombre, 2, 50) || !NOMBRE_RE.test(nombre.trim())) {
+        throw errorValidacion("El nombre debe tener entre 2 y 50 caracteres: letras, espacios, punto, apóstrofo o guion.", "nombre");
+    }
     if (!esEmail(email)) throw errorValidacion("Introduce un email válido.", "email");
-    if (!longitudEntre(password, 4, 100)) throw errorValidacion("La contraseña debe tener entre 4 y 100 caracteres.", "password");
+    if (password.length < PASSWORD_MIN || password.length > PASSWORD_MAX || /\s/.test(password)) {
+        throw errorValidacion(`La contraseña debe tener entre ${PASSWORD_MIN} y ${PASSWORD_MAX} caracteres y no puede llevar espacios.`, "password");
+    }
 }
 
 export const resolversUsuarios = {
@@ -63,10 +73,14 @@ export const resolversUsuarios = {
         borrarUsuario: async (_, { email }, contexto) => {
             requerirAuth(contexto);
 
-            const borrado = await usuariosRepo.borrarPorEmail(email);
+            // Se normaliza una sola vez: el repo de intercambios no hace trim() y, sin esto,
+            // " Laura@tandem.com " borraría al usuario pero dejaría sus intercambios huérfanos.
+            const correo = email.trim().toLowerCase();
+
+            const borrado = await usuariosRepo.borrarPorEmail(correo);
             if (!borrado) throw errorNoEncontrado("Usuario");
 
-            await intercambiosRepo.borrarPorEmail(email);
+            await intercambiosRepo.borrarPorEmail(correo);
             return true;
         },
     },
