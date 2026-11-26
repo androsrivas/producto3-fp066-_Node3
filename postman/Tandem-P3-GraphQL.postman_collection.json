@@ -1,0 +1,1002 @@
+{
+  "info": {
+    "name": "Tandem P3 - API GraphQL",
+    "description": "Pruebas de la API GraphQL (Producto 3). Ejecutar con Collection Runner en orden: el login guarda el token y el alta de intercambio guarda su id. Requiere el servidor en http://localhost:4000/graphql.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000/graphql"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "intercambioId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1 - Autenticacion",
+      "item": [
+        {
+          "name": "Login correcto (guarda el token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('Login correcto', () => pm.expect(r.data.login.token).to.be.a('string'));",
+                  "pm.collectionVariables.set('token', r.data.login.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation {\n  login(email: \"laura@tandem.com\", password: \"1234\") {\n    token\n    usuario { id nombre email }\n  }\n}",
+                "variables": "{}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Ejecutar primero: guarda el JWT en la variable de coleccion {{token}}."
+          }
+        },
+        {
+          "name": "Login con password incorrecta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('Devuelve un error', () => pm.expect(r.errors).to.be.an('array').that.is.not.empty);",
+                  "pm.test('Código BAD_USER_INPUT', () => pm.expect(r.errors[0].extensions.code).to.eql('BAD_USER_INPUT'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation {\n  login(email: \"laura@tandem.com\", password: \"mala\") {\n    token\n  }\n}",
+                "variables": "{}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "yo (usuario autenticado)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('Sin errores GraphQL', () => pm.expect(r.errors).to.be.undefined);",
+                  "pm.test('Es Laura', () => pm.expect(r.data.yo.email).to.eql('laura@tandem.com'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query {\n  yo { id nombre email }\n}",
+                "variables": "{}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2 - Usuarios",
+      "item": [
+        {
+          "name": "Listar usuarios",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('Sin errores GraphQL', () => pm.expect(r.errors).to.be.undefined);",
+                  "pm.test('Hay usuarios', () => pm.expect(r.data.usuarios.length).to.be.above(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query {\n  usuarios { id nombre email }\n}",
+                "variables": "{}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Alta de usuario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('Sin errores GraphQL', () => pm.expect(r.errors).to.be.undefined);",
+                  "pm.test('Usuario creado', () => pm.expect(r.data.altaUsuario.email).to.eql('postman@tandem.com'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation {\n  altaUsuario(input: { nombre: \"Postman Test\", email: \"postman@tandem.com\", password: \"abcd\" }) {\n    id\n    nombre\n    email\n  }\n}",
+                "variables": "{}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Alta con email duplicado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('Devuelve un error', () => pm.expect(r.errors).to.be.an('array').that.is.not.empty);",
+                  "pm.test('Código BAD_USER_INPUT', () => pm.expect(r.errors[0].extensions.code).to.eql('BAD_USER_INPUT'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation {\n  altaUsuario(input: { nombre: \"Postman Test\", email: \"postman@tandem.com\", password: \"abcd\" }) {\n    id\n  }\n}",
+                "variables": "{}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Alta con email invalido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('Devuelve un error', () => pm.expect(r.errors).to.be.an('array').that.is.not.empty);",
+                  "pm.test('Código BAD_USER_INPUT', () => pm.expect(r.errors[0].extensions.code).to.eql('BAD_USER_INPUT'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation {\n  altaUsuario(input: { nombre: \"Postman Test\", email: \"no-es-un-email\", password: \"abcd\" }) {\n    id\n  }\n}",
+                "variables": "{}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Alta con password demasiado corta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('Devuelve un error', () => pm.expect(r.errors).to.be.an('array').that.is.not.empty);",
+                  "pm.test('Código BAD_USER_INPUT', () => pm.expect(r.errors[0].extensions.code).to.eql('BAD_USER_INPUT'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation {\n  altaUsuario(input: { nombre: \"Postman Test\", email: \"otro@tandem.com\", password: \"1\" }) {\n    id\n  }\n}",
+                "variables": "{}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3 - Intercambios",
+      "item": [
+        {
+          "name": "Listar intercambios",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('Sin errores GraphQL', () => pm.expect(r.errors).to.be.undefined);",
+                  "pm.test('Hay intercambios', () => pm.expect(r.data.intercambios.length).to.be.above(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query {\n  intercambios {\n    id titulo tipo fecha seleccionado\n    autor { nombre email }\n  }\n}",
+                "variables": "{}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Filtrar por tipo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('Sin errores GraphQL', () => pm.expect(r.errors).to.be.undefined);",
+                  "pm.test('Todos son OFREZCO_IDIOMA', () => r.data.intercambios.forEach(i => pm.expect(i.tipo).to.eql('OFREZCO_IDIOMA')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query {\n  intercambios(filtro: { tipo: OFREZCO_IDIOMA }) { id titulo tipo }\n}",
+                "variables": "{}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Filtrar por email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('Sin errores GraphQL', () => pm.expect(r.errors).to.be.undefined);",
+                  "pm.test('Todos son de Laura', () => r.data.intercambios.forEach(i => pm.expect(i.email).to.eql('laura@tandem.com')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query {\n  intercambios(filtro: { email: \"laura@tandem.com\" }) { id titulo email }\n}",
+                "variables": "{}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Alta de intercambio (guarda el id)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('Sin errores GraphQL', () => pm.expect(r.errors).to.be.undefined);",
+                  "pm.test('Empieza sin seleccionar', () => pm.expect(r.data.altaIntercambio.seleccionado).to.eql(false));",
+                  "pm.test('Email normalizado', () => pm.expect(r.data.altaIntercambio.email).to.eql('laura@tandem.com'));",
+                  "pm.collectionVariables.set('intercambioId', r.data.altaIntercambio.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation {\n  altaIntercambio(input: {\n    titulo: \"  Intercambio de Postman  \"\n    email: \"  LAURA@tandem.com \"\n    fecha: \"2026-12-01\"\n    descripcion: \"Creado desde las pruebas de Postman\"\n    tipo: OFREZCO_IDIOMA\n  }) {\n    id titulo email seleccionado\n  }\n}",
+                "variables": "{}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            },
+            "description": "Con espacios y mayusculas a proposito: el backend debe normalizar. Guarda el id en {{intercambioId}}."
+          }
+        },
+        {
+          "name": "Alta con fecha invalida",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('Devuelve un error', () => pm.expect(r.errors).to.be.an('array').that.is.not.empty);",
+                  "pm.test('Código BAD_USER_INPUT', () => pm.expect(r.errors[0].extensions.code).to.eql('BAD_USER_INPUT'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation {\n  altaIntercambio(input: {\n    titulo: \"Fecha mala\"\n    email: \"laura@tandem.com\"\n    fecha: \"01/12/2026\"\n    descripcion: \"x\"\n    tipo: OFREZCO_IDIOMA\n  }) {\n    id\n  }\n}",
+                "variables": "{}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Alta con email de usuario inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('Devuelve un error', () => pm.expect(r.errors).to.be.an('array').that.is.not.empty);",
+                  "pm.test('Código BAD_USER_INPUT', () => pm.expect(r.errors[0].extensions.code).to.eql('BAD_USER_INPUT'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation {\n  altaIntercambio(input: {\n    titulo: \"Sin autor\"\n    email: \"nadie@tandem.com\"\n    fecha: \"2026-12-01\"\n    descripcion: \"x\"\n    tipo: OFREZCO_IDIOMA\n  }) {\n    id\n  }\n}",
+                "variables": "{}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Alta con tipo invalido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('Rechazado por el esquema', () => pm.expect(r.errors).to.be.an('array').that.is.not.empty);",
+                  "pm.test('Codigo GRAPHQL_VALIDATION_FAILED', () => pm.expect(r.errors[0].extensions.code).to.eql('GRAPHQL_VALIDATION_FAILED'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation {\n  altaIntercambio(input: {\n    titulo: \"Tipo malo\"\n    email: \"laura@tandem.com\"\n    fecha: \"2026-12-01\"\n    descripcion: \"x\"\n    tipo: INVENTADO\n  }) {\n    id\n  }\n}",
+                "variables": "{}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            },
+            "description": "El enum TipoIntercambio lo rechaza antes de llegar al resolver (Apollo responde 400)."
+          }
+        },
+        {
+          "name": "Seleccionar intercambio",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('Sin errores GraphQL', () => pm.expect(r.errors).to.be.undefined);",
+                  "pm.test('Seleccionado', () => pm.expect(r.data.seleccionarIntercambio.seleccionado).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation {\n  seleccionarIntercambio(id: \"{{intercambioId}}\") {\n    id seleccionado\n  }\n}",
+                "variables": "{}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar seleccionados",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('Sin errores GraphQL', () => pm.expect(r.errors).to.be.undefined);",
+                  "pm.test('Incluye el de prueba', () => pm.expect(r.data.seleccionados.map(i => i.id)).to.include(pm.collectionVariables.get('intercambioId')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query {\n  seleccionados { id titulo }\n}",
+                "variables": "{}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Deseleccionar intercambio",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('Sin errores GraphQL', () => pm.expect(r.errors).to.be.undefined);",
+                  "pm.test('Deseleccionado', () => pm.expect(r.data.deseleccionarIntercambio.seleccionado).to.eql(false));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation {\n  deseleccionarIntercambio(id: \"{{intercambioId}}\") {\n    id seleccionado\n  }\n}",
+                "variables": "{}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Seleccionar con id inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('Devuelve un error', () => pm.expect(r.errors).to.be.an('array').that.is.not.empty);",
+                  "pm.test('Código NOT_FOUND', () => pm.expect(r.errors[0].extensions.code).to.eql('NOT_FOUND'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation {\n  seleccionarIntercambio(id: \"aaaaaaaaaaaaaaaaaaaaaaaa\") {\n    id\n  }\n}",
+                "variables": "{}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Seleccionar con id de formato invalido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('Devuelve un error', () => pm.expect(r.errors).to.be.an('array').that.is.not.empty);",
+                  "pm.test('Código NOT_FOUND', () => pm.expect(r.errors[0].extensions.code).to.eql('NOT_FOUND'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation {\n  seleccionarIntercambio(id: \"123\") {\n    id\n  }\n}",
+                "variables": "{}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Borrar intercambio",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('Sin errores GraphQL', () => pm.expect(r.errors).to.be.undefined);",
+                  "pm.test('Borrado', () => pm.expect(r.data.borrarIntercambio).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation {\n  borrarIntercambio(id: \"{{intercambioId}}\")\n}",
+                "variables": "{}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Borrar de nuevo (ya no existe)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('Sin errores GraphQL', () => pm.expect(r.errors).to.be.undefined);",
+                  "pm.test('Devuelve false', () => pm.expect(r.data.borrarIntercambio).to.eql(false));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation {\n  borrarIntercambio(id: \"{{intercambioId}}\")\n}",
+                "variables": "{}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4 - Borrado de usuario y logout",
+      "item": [
+        {
+          "name": "Borrar usuario (en cascada)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('Sin errores GraphQL', () => pm.expect(r.errors).to.be.undefined);",
+                  "pm.test('Borrado', () => pm.expect(r.data.borrarUsuario).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation {\n  borrarUsuario(email: \"postman@tandem.com\")\n}",
+                "variables": "{}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Borrar usuario inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('Devuelve un error', () => pm.expect(r.errors).to.be.an('array').that.is.not.empty);",
+                  "pm.test('Código NOT_FOUND', () => pm.expect(r.errors[0].extensions.code).to.eql('NOT_FOUND'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation {\n  borrarUsuario(email: \"postman@tandem.com\")\n}",
+                "variables": "{}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('Sin errores GraphQL', () => pm.expect(r.errors).to.be.undefined);",
+                  "pm.test('Devuelve true', () => pm.expect(r.data.logout).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation {\n  logout\n}",
+                "variables": "{}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5 - Sin token",
+      "item": [
+        {
+          "name": "yo sin token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('Devuelve un error', () => pm.expect(r.errors).to.be.an('array').that.is.not.empty);",
+                  "pm.test('Código UNAUTHENTICATED', () => pm.expect(r.errors[0].extensions.code).to.eql('UNAUTHENTICATED'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query {\n  yo { id }\n}",
+                "variables": "{}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Listar intercambios sin token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('Devuelve un error', () => pm.expect(r.errors).to.be.an('array').that.is.not.empty);",
+                  "pm.test('Código UNAUTHENTICATED', () => pm.expect(r.errors[0].extensions.code).to.eql('UNAUTHENTICATED'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query {\n  intercambios { id }\n}",
+                "variables": "{}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Alta de intercambio sin token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('Devuelve un error', () => pm.expect(r.errors).to.be.an('array').that.is.not.empty);",
+                  "pm.test('Código UNAUTHENTICATED', () => pm.expect(r.errors[0].extensions.code).to.eql('UNAUTHENTICATED'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation {\n  altaIntercambio(input: { titulo: \"Sin token\", email: \"laura@tandem.com\", fecha: \"2026-12-01\", descripcion: \"x\", tipo: OFREZCO_IDIOMA }) {\n    id\n  }\n}",
+                "variables": "{}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
