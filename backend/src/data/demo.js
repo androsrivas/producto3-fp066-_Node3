@@ -46,7 +46,7 @@ export const INTERCAMBIOS_DEMO = [
 
 /**
  * Carga los usuarios e intercambios de ejemplo. Es idempotente: ants de crear cada usuario, borra sus intercambios y a él mismo, así que ejecutarla varias veces no duplica nada.
- * Los errores no se capturan aquí: decide quien la llama (seed.js o index.js)
+ * Los errores no se capturan aquí: seed.js
  * @returns {Promise<void>}
  */
 export async function cargarDatosDemo() {
