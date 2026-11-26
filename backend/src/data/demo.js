@@ -4,13 +4,13 @@ import * as usuariosRepo from "../repositories/usuarios.js";
 import * as intercambiosRepo from "../repositories/intercambios.js";
 import { hashPassword } from "../services/auth.js";
 
-const USUARIOS_DEMO = [
+export const USUARIOS_DEMO = [
   { nombre: "Laura Puig", email: "laura@tandem.com", password: "1234" },
   { nombre: "John Smith", email: "john@tandem.com", password: "abcd" },
   { nombre: "Aya Tanaka", email: "aya@tandem.com", password: "5678" },
 ];
 
-const INTERCAMBIOS_DEMO = [
+export const INTERCAMBIOS_DEMO = [
   {
     titulo: "Conversación en inglés los martes",
     email: "john@tandem.com",
@@ -44,19 +44,29 @@ const INTERCAMBIOS_DEMO = [
   },
 ];
 
+/**
+ * Carga los usuarios e intercambios de ejemplo. Es idempotente: ants de crear cada usuario, borra sus intercambios y a él mismo, así que ejecutarla varias veces no duplica nada.
+ * Los errores no se capturan aquí: decide quien la llama (seed.js o index.js)
+ * @returns {Promise<void>}
+ */
 export async function cargarDatosDemo() {
-  try {
-    for (const u of USUARIOS_DEMO) {
-      const passwordHash = await hashPassword(u.password);
-      await usuariosRepo.crear({ nombre: u.nombre, email: u.email, passwordHash });
-    }
-    console.log("Usuarios cargados", (await usuariosRepo.listar()).length);
-
-    for (const i of INTERCAMBIOS_DEMO) {
-        await intercambiosRepo.crear(i);
-    }
-    console.log("Intercambios cargados", (await intercambiosRepo.listar()).length);
-  } catch (error) {
-    console.error("No se pudieron cargar los datos de ejemplo", error);
+  for (const u of USUARIOS_DEMO) {
+    await intercambiosRepo.borrarPorEmail(u.email);
+    await usuariosRepo.borrarPorEmail(u.email);
+    const passwordHash = await hashPassword(u.password);
+    await usuariosRepo.crear({
+      nombre: u.nombre,
+      email: u.email,
+      passwordHash,
+    });
   }
+  console.log("Usuarios cargados", (await usuariosRepo.listar()).length);
+
+  for (const i of INTERCAMBIOS_DEMO) {
+    await intercambiosRepo.crear(i);
+  }
+  console.log(
+    "Intercambios cargados",
+    (await intercambiosRepo.listar()).length,
+  );
 }
