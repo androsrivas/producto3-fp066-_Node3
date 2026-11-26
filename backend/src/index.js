@@ -2,6 +2,7 @@
 // Punto de entrada del servidor
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 import { config } from "./config.js";
 import { readFileSync } from "node:fs";
 import { ApolloServer } from "@apollo/server";
@@ -12,7 +13,10 @@ import { inicializar } from "./db/inicializar.js";
 import { resolvers } from "./graphql/resolvers/index.js";
 
 const app = express();
-app.use(cors());
+// Cabeceras de seguridad. Fuera de producción se desactiva solo la CSP para que funcione Apollo Sandbox.
+app.use(helmet({ contentSecurityPolicy: process.env.NODE_ENV === "production" ? undefined : false }));
+// CORS: solo los orígenes de CORS_ORIGIN; si está vacío, cualquiera (desarrollo)
+app.use(cors(config.corsOrigenes.length ? { origin: config.corsOrigenes } : undefined));
 app.use(express.json());
 
 // Ruta de prueba para verificar que Express responde
