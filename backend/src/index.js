@@ -10,6 +10,7 @@ import { crearContexto } from "./graphql/contexto.js";
 import { conectar, cerrar } from "./db/conexion.js";
 import { inicializar } from "./db/inicializar.js";
 import { resolvers } from "./graphql/resolvers/index.js";
+import { crearFormatearError } from "./utils/errores.js";
 
 const app = express();
 app.use(cors());
@@ -29,7 +30,14 @@ await inicializar();
 console.log("Colecciones e índices listos");
 
 // Los datos de ejemplo se cargan aparte con: npm run seed
-const servidorApollo = new ApolloServer({ typeDefs, resolvers });
+const servidorApollo = new ApolloServer({
+    typeDefs,
+    resolvers,
+    // Explícito (no depende de NODE_ENV por defecto): en producción no se envía el stacktrace,
+    // porque revelaría rutas locales del servidor.
+    includeStacktraceInErrorResponses: !config.produccion,
+    formatError: crearFormatearError(config.produccion),
+});
 await servidorApollo.start();
 
 app.use("/graphql", expressMiddleware(servidorApollo, { context: crearContexto }));
