@@ -22,6 +22,19 @@ export function errorNoEncontrado(recurso) {
 }
 
 /**
+ * Error por demasiados intentos (p. ej. login fallido muchas veces).
+ * @param {number} segundos - Segundos que faltan para poder reintentar.
+ * @returns {GraphQLError}
+ */
+export function errorDemasiadosIntentos(segundos) {
+    const minutos = Math.ceil(segundos / 60);
+    return new GraphQLError(
+        `Demasiados intentos fallidos. Prueba de nuevo en ${minutos} minuto${minutos === 1 ? "" : "s"}.`,
+        { extensions: { code: "TOO_MANY_REQUESTS", http: { status: 429 }, reintentarEnSegundos: segundos } },
+    );
+}
+
+/**
  * Comprueba que la petición viene de un usuario autenticado.
  * @param {{ usuario: object|null }} contexto - Contexto de Apollo (ver graphql/contexto.js).
  * @returns {object} El usuario autenticado.

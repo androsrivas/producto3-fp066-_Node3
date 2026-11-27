@@ -2,11 +2,16 @@
 // Resolvers de usuarios y autenticación
 import * as usuariosRepo from "../../repositories/usuarios.js";
 import * as intercambiosRepo from "../../repositories/intercambios.js";
-import { comprobarPassword, firmarToken, hashPassword } from "../../services/auth.js";
-import { errorValidacion, errorNoEncontrado, requerirAuth } from "../../utils/errores.js";
+import { comprobarPassword, firmarToken, hashPassword, HASH_FALSO } from "../../services/auth.js";
+import { errorValidacion, errorNoEncontrado, errorDemasiadosIntentos, requerirAuth } from "../../utils/errores.js";
+import { crearLimitador } from "../../utils/limiteIntentos.js";
+import { config } from "../../config.js";
 import { esEmail, longitudEntre } from "../../utils/validacion.js";
 
 const ERROR_LOGIN = "Email o contraseña incorrectos";
+
+// Fallos de login por email: tras loginMaxIntentos fallos se bloquea durante la ventana
+const limiteLogin = crearLimitador({ max: config.loginMaxIntentos, ventanaMs: config.loginVentanaMs });
 
 // Mismas reglas que el Producto 2 (frontend/js/int_4_usuarios.js)
 // Letras (con tildes), espacios, punto, apóstrofo y guion. Debe empezar por letra.
@@ -42,11 +47,18 @@ export const resolversUsuarios = {
     Mutation: {
         // Pública: es la única operación que no exige token
         login: async (_, { email, password }) => {
-            const usuario = await usuariosRepo.buscarPorEmail(email);
-            if (!usuario) throw errorValidacion(ERROR_LOGIN);
+            const clave = email.trim().toLowerCase();
+            const espera = limiteLogin.segundosRestantes(clave);
+            if (espera > 0) throw errorDemasiadosIntentos(espera);
 
-            const correcta = await comprobarPassword(password, usuario.passwordHash);
-            if (!correcta) throw errorValidacion(ERROR_LOGIN);
+            const usuario = await usuariosRepo.buscarPorEmail(email);
+            // bcrypt se ejecuta siempre (con un hash de relleno si no existe el usuario) para tardar lo mismo
+            const correcta = await comprobarPassword(password, usuario?.passwordHash ?? HASH_FALSO);
+            if (!usuario || !correcta) {
+                limiteLogin.registrarFallo(clave);
+                throw errorValidacion(ERROR_LOGIN);
+            }
+            limiteLogin.reiniciar(clave);
 
             const token = firmarToken(usuario);
             const { passwordHash, ...usuarioSinHash } = usuario;

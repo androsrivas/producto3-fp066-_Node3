@@ -6,6 +6,10 @@ import { config } from "../config.js";
 
 const RONDAS_BCRYPT = 10;
 
+// Hash de relleno: permite ejecutar bcrypt aunque el usuario no exista y así tardar lo mismo
+// (evita descubrir qué emails están registrados midiendo el tiempo de respuesta del login).
+export const HASH_FALSO = bcrypt.hashSync("relleno-tiempo-constante", RONDAS_BCRYPT);
+
 /**
  * Genera el hash de una contraseña
  * @param {string} password - Contraseña en claro.

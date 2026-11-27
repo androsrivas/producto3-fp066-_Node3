@@ -21,4 +21,9 @@ export const config = {
     mongoDb: process.env.MONGODB_DB || "tandem",
     jwtSecret: required("JWT_SECRET"),
     jwtExpires: process.env.JWT_EXPIRES || "2h",
+    // Orígenes permitidos por CORS, separados por comas. Vacío = cualquier origen (solo desarrollo).
+    corsOrigenes: (process.env.CORS_ORIGIN || "").split(",").map((o) => o.trim()).filter(Boolean),
+    // Límite de intentos de login fallidos por email
+    loginMaxIntentos: Number(process.env.LOGIN_MAX_INTENTOS) || 5,
+    loginVentanaMs: (Number(process.env.LOGIN_VENTANA_MIN) || 15) * 60 * 1000,
 };
