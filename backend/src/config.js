@@ -21,4 +21,6 @@ export const config = {
     mongoDb: process.env.MONGODB_DB || "tandem",
     jwtSecret: required("JWT_SECRET"),
     jwtExpires: process.env.JWT_EXPIRES || "2h",
+    // En producción (NODE_ENV=production) los errores no revelan detalles internos
+    produccion: process.env.NODE_ENV === "production",
 };
