@@ -7,7 +7,6 @@ import { readFileSync } from "node:fs";
 import { ApolloServer } from "@apollo/server";
 import { expressMiddleware } from "@as-integrations/express5";
 import { crearContexto } from "./graphql/contexto.js";
-import { cargarDatosDemo } from "./data/demo.js";
 import { conectar, cerrar } from "./db/conexion.js";
 import { inicializar } from "./db/inicializar.js";
 import { resolvers } from "./graphql/resolvers/index.js";
@@ -29,7 +28,7 @@ console.log("Conectado a MongoDB");
 await inicializar();
 console.log("Colecciones e índices listos");
 
-await cargarDatosDemo();
+// Los datos de ejemplo se cargan aparte con: npm run seed
 const servidorApollo = new ApolloServer({ typeDefs, resolvers });
 await servidorApollo.start();
 
