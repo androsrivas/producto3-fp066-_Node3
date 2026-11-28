@@ -18,6 +18,25 @@ const ID_VALIDO = /^[0-9a-f]{24}$/i;
 const ORDEN = { fecha: 1, _id: 1 };
 
 /**
+ * Etapas de aggregate que añaden a cada intercambio su autor (usuario con ese email).
+ * Una sola consulta en lugar de buscar el usuario de cada intercambio por separado.
+ * El hash de la contraseña no se trae nunca (proyección dentro del $lookup).
+ */
+const CON_AUTOR = [
+    {
+        $lookup: {
+            from: "usuarios",
+            localField: "email",
+            foreignField: "email",
+            pipeline: [{ $project: { passwordHash: 0 } }],
+            as: "autor",
+        },
+    },
+    // $lookup devuelve un array: lo convertimos en un objeto (o lo deja sin autor si no existe)
+    { $unwind: { path: "$autor", preserveNullAndEmptyArrays: true } },
+];
+
+/**
  * Normaliza un email (sin espacios y en minúsculas), como se hacía en el P2.
  * @param {string} email
  * @returns {string}
@@ -31,8 +50,13 @@ const normalizar = (email) => email.trim().toLowerCase();
  */
 function aIntercambio(doc) {
     if (!doc) return null;
-    const { _id, ...resto } = doc;
-    return { id: _id.toString(), ...resto };
+    const { _id, autor, ...resto } = doc;
+    const intercambio = { id: _id.toString(), ...resto };
+    if (autor) {
+        const { _id: idAutor, ...datosAutor } = autor;
+        intercambio.autor = { id: idAutor.toString(), ...datosAutor };
+    }
+    return intercambio;
 }
 
 /**
@@ -45,7 +69,7 @@ function aObjectId(id) {
 }
 
 /**
- * Devuelve los intercambios, opcionalmente filtrados por tipo y/o email.
+ * Devuelve los intercambios (con su autor ya incluido), opcionalmente filtrados por tipo y/o email.
  * @param {{ tipo?:string, email?:string }} [filtro]
  * @returns {Promise<Array<object>>}
  */
@@ -54,7 +78,9 @@ export async function listar(filtro = {}) {
     if (filtro.tipo) consulta.tipo = filtro.tipo;
     if (filtro.email) consulta.email = normalizar(filtro.email);
 
-    const docs = await coleccion().find(consulta).sort(ORDEN).toArray();
+    const docs = await coleccion()
+        .aggregate([{ $match: consulta }, { $sort: ORDEN }, ...CON_AUTOR])
+        .toArray();
     return docs.map(aIntercambio);
 }
 
@@ -145,10 +171,43 @@ export async function deseleccionar(id) {
 }
 
 /**
- * Devuelve los intercambios seleccionados.
+ * Devuelve los intercambios seleccionados (con su autor ya incluido).
  * @returns {Promise<Array<object>>}
  */
 export async function listarSeleccionados() {
-    const docs = await coleccion().find({ seleccionado: true }).sort(ORDEN).toArray();
+    const docs = await coleccion()
+        .aggregate([{ $match: { seleccionado: true } }, { $sort: ORDEN }, ...CON_AUTOR])
+        .toArray();
     return docs.map(aIntercambio);
+}
+
+/* ------------- ESTADÍSTICAS ------------- */
+
+/**
+ * Cuenta los intercambios por tipo y por mes con una sola consulta aggregate ($facet).
+ * @returns {Promise<{ porTipo: Array<{tipo:string,total:number}>, porMes: Array<{mes:string,total:number}> }>}
+ */
+export async function estadisticas() {
+    const [resultado] = await coleccion()
+        .aggregate([
+            {
+                $facet: {
+                    porTipo: [
+                        { $group: { _id: "$tipo", total: { $sum: 1 } } },
+                        { $sort: { _id: 1 } },
+                    ],
+                    // fecha es AAAA-MM-DD: los 7 primeros caracteres son AAAA-MM
+                    porMes: [
+                        { $group: { _id: { $substrCP: ["$fecha", 0, 7] }, total: { $sum: 1 } } },
+                        { $sort: { _id: 1 } },
+                    ],
+                },
+            },
+        ])
+        .toArray();
+
+    return {
+        porTipo: resultado.porTipo.map(({ _id, total }) => ({ tipo: _id, total })),
+        porMes: resultado.porMes.map(({ _id, total }) => ({ mes: _id, total })),
+    };
 }

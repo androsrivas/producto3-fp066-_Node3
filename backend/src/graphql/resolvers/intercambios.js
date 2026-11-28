@@ -54,6 +54,11 @@ export const resolversIntercambios = {
             requerirAuth(contexto);
             return intercambiosRepo.listarSeleccionados();
         },
+
+        estadisticas: async (_, __, contexto) => {
+            requerirAuth(contexto);
+            return intercambiosRepo.estadisticas();
+        },
     },
 
     Mutation: {
@@ -83,9 +88,10 @@ export const resolversIntercambios = {
         },
     },
 
-
+    // Resolver de campo: los listados ya traen el autor unido con $lookup (una sola consulta).
+    // Solo si el intercambio viene sin autor (p. ej. recién creado o seleccionado) se busca por email.
     // Usuario no tiene passwordHash en el esquema, así que no se expone aunque el repositorio lo devuelva.
     Intercambio: {
-        autor: (intercambio) => usuariosRepo.buscarPorEmail(intercambio.email),
+        autor: (intercambio) => intercambio.autor ?? usuariosRepo.buscarPorEmail(intercambio.email),
     },
 };
