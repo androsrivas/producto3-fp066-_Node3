@@ -31,6 +31,23 @@ type AuthPayload {
     usuario: Usuario!
 }
 
+"Cuántos intercambios hay de un tipo"
+type EstadisticaTipo {
+    tipo: TipoIntercambio!
+    total: Int!
+}
+
+"Cuántos intercambios hay en un mes (formato AAAA-MM)"
+type EstadisticaMes {
+    mes: String!
+    total: Int!
+}
+
+type Estadisticas {
+    porTipo: [EstadisticaTipo!]!
+    porMes: [EstadisticaMes!]!
+}
+
 input UsuarioInput {
     nombre: String!
     email: String!
@@ -57,6 +74,8 @@ type Query {
     intercambios(filtro: FiltroIntercambio): [Intercambio!]!
     "Intercambios seleccionados en el Dashboard"
     seleccionados: [Intercambio!]!
+    "Recuento de intercambios por tipo y por mes (aggregate)"
+    estadisticas: Estadisticas!
 }
 
 type Mutation {
